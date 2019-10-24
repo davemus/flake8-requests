@@ -1,8 +1,9 @@
 import ast
-from urllib.parse import urlparse
-
 import logging
 import sys
+from urllib.parse import urlparse
+
+from .dumb_scope_visitor import DumbScopeVisitor
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -45,24 +46,7 @@ class NoAuthOverHttp(object):
     def _message_for(self, url):
         return f"{self.code} auth used over http: {url}"
 
-class NoAuthOverHttpVisitor(ast.NodeVisitor):
-    def __init__(self):
-        self.report_nodes = []
-        self.symbol_table = {}
-        self._set_scope("global")
-
-    def _symbol_lookup(self, symbol):
-        logger.debug(f"Symbol table: {self.symbol_table}")
-
-        try:
-            val = self.symbol_table[self.scope][symbol]
-        except KeyError:
-            logger.debug(f"{symbol} not in scope[{self.scope}] symbol table. Case not handled yet")
-            return None
-
-        if isinstance(val, ast.Name):
-            val = self._symbol_lookup(val.id)
-        return val
+class NoAuthOverHttpVisitor(DumbScopeVisitor):
 
     def _parse_url(self, args):
         for arg in args:
@@ -79,42 +63,10 @@ class NoAuthOverHttpVisitor(ast.NodeVisitor):
                 val = self._symbol_lookup(arg.id)
                 return self._parse_url([val])
 
-
     def _is_http(self, parsed_url):
         if parsed_url and parsed_url.scheme == "http":
             return True
         return False
-
-    def _set_scope(self, scope):
-        self.scope = scope
-        self.symbol_table[self.scope] = {}
-
-    def _set_symbol(self, symbol, value):
-        self.symbol_table[self.scope][symbol] = value
-
-    def visit_FunctionDef(self, def_node):
-        self._set_scope(def_node.name)
-        for node in def_node.body:
-            self.visit(node)
-
-    def visit_AsyncFunctionDef(self, def_node):
-        self.visit_FunctionDef(def_node)
-
-    def visit_ClassDef(self, class_node):
-        self._set_scope(class_node.name)
-        for node in class_node.body:
-            self.visit(node)
-
-    def visit_Assign(self, assign_node):
-        target = assign_node.targets[0]
-        logger.debug(f"Visiting Assign node: {ast.dump(assign_node)}")
-        if isinstance(target, ast.Name):
-            if isinstance(target.ctx, ast.Store):
-                self._set_symbol(target.id, assign_node.value)
-        elif isinstance(target, ast.Tuple):
-            if isinstance(target.ctx, ast.Store):
-                for i, elem in enumerate(target.elts):
-                    self._set_symbol(elem.id, assign_node.value.elts[i])
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
