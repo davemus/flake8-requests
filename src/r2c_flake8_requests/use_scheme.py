@@ -1,9 +1,10 @@
 import ast
 import logging
 import sys
+from urllib.parse import urlparse
 
 from .dumb_scope_visitor import DumbScopeVisitor
-from .constants import HTTP_VERBS
+from .constants import HTTP_VERBS, VALID_SCHEMES
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -11,31 +12,53 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class UseTimeout(object):
-    name = "UseTimeout"
+class UseScheme(object):
+    name = "UseScheme"
     version = "0.0.1"
-    code = "R2C702"
+    code = "R2C703"
+    reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
 
     def __init__(self, tree):
         self.tree = tree
 
     def run(self):
-        visitor = UseTimeoutVisitor()
+        visitor = UseSchemeVisitor()
         visitor.visit(self.tree)
 
         for report in visitor.report_nodes:
             node = report['node']
+            url = report['url']
             yield (
                 node.lineno,
                 node.col_offset,
-                self._message_for(),
+                self._message_for(url),
                 self.name,
             )
 
-    def _message_for(self):
-        return f"{self.code} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
+    def _message_for(self, url):
+        return f"{self.code} need a scheme (e.g., https://) for url [{url}] otherwise requests will throw an exception.  See {self.reasoning}"
 
-class UseTimeoutVisitor(DumbScopeVisitor):
+class UseSchemeVisitor(DumbScopeVisitor):
+
+    def _parse_url(self, args):
+        for arg in args:
+            if isinstance(arg, ast.Str):
+                try:
+                    parsed = urlparse(arg.s)
+                    logger.debug(f"Parsed url is: {parsed}")
+                except Exception:
+                    parsed = None
+                    logger.debug("Not a parseable URL")
+                return parsed
+            elif isinstance(arg, ast.Name):
+                # Look up in symbol table
+                val = self._symbol_lookup(arg.id)
+                return self._parse_url([val])
+
+    def _is_valid_scheme(self, parsed_url):
+        if parsed_url and parsed_url.scheme in VALID_SCHEMES:
+            return True
+        return False
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
@@ -53,18 +76,20 @@ class UseTimeoutVisitor(DumbScopeVisitor):
             logger.debug("Call node is not a requests API call")
             return
 
-        if not call_node.keywords:
-            logger.debug("No keywords on Call node")
+        args = call_node.args
+        url = self._parse_url(call_node.args)
+        if self._is_valid_scheme(url):
+            logger.debug("url has a valid scheme, so it's cool")
             return
 
-        keywords = call_node.keywords
-        if any([kw.arg == "timeout" for kw in keywords]):
-            logger.debug("requests call has the 'timeout' keyword, so we're good")
-            return
+        # This is bad, I know.  Please forgive me.......
+        if url:
+            url = url.geturl()
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
         self.report_nodes.append({
             "node": call_node,
+            "url": url
         })
 
 if __name__ == "__main__":
@@ -82,5 +107,5 @@ if __name__ == "__main__":
     with open(args.inputfile, 'r') as fin:
         tree = ast.parse(fin.read())
 
-    visitor = UseTimeoutVisitor()
+    visitor = UseSchemeVisitor()
     visitor.visit(tree)

@@ -11,6 +11,8 @@ setuptools.setup(
     entry_points={
         'flake8.extension': [
             'R2C701=r2c_flake8_requests.no_auth_over_http:NoAuthOverHttp',
+            'R2C702=r2c_flake8_requests.use_timeout:UseTimeout',
+            'R2C703=r2c_flake8_requests.use_scheme:UseScheme',
         ],
     },
 )
