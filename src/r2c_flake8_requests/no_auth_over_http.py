@@ -49,14 +49,15 @@ class NoAuthOverHttpVisitor(ast.NodeVisitor):
     def __init__(self):
         self.report_nodes = []
         self.symbol_table = {}
+        self._set_scope("global")
 
     def _symbol_lookup(self, symbol):
         logger.debug(f"Symbol table: {self.symbol_table}")
 
         try:
-            val = self.symbol_table[symbol]
+            val = self.symbol_table[self.scope][symbol]
         except KeyError:
-            logger.debug(f"{symbol} not in symbol table. Case not handled yet")
+            logger.debug(f"{symbol} not in scope[{self.scope}] symbol table. Case not handled yet")
             return None
 
         if isinstance(val, ast.Name):
@@ -84,18 +85,39 @@ class NoAuthOverHttpVisitor(ast.NodeVisitor):
             return True
         return False
 
+    def _set_scope(self, scope):
+        self.scope = scope
+        self.symbol_table[self.scope] = {}
+
+    def _set_symbol(self, symbol, value):
+        self.symbol_table[self.scope][symbol] = value
+
+    def visit_FunctionDef(self, def_node):
+        self._set_scope(def_node.name)
+        for node in def_node.body:
+            self.visit(node)
+
+    def visit_AsyncFunctionDef(self, def_node):
+        self.visit_FunctionDef(def_node)
+
+    def visit_ClassDef(self, class_node):
+        self._set_scope(class_node.name)
+        for node in class_node.body:
+            self.visit(node)
+
     def visit_Assign(self, assign_node):
         target = assign_node.targets[0]
-        logger.debug(f"Assign node: {ast.dump(assign_node)}")
+        logger.debug(f"Visiting Assign node: {ast.dump(assign_node)}")
         if isinstance(target, ast.Name):
             if isinstance(target.ctx, ast.Store):
-                self.symbol_table[target.id] = assign_node.value
+                self._set_symbol(target.id, assign_node.value)
         elif isinstance(target, ast.Tuple):
             if isinstance(target.ctx, ast.Store):
                 for i, elem in enumerate(target.elts):
-                    self.symbol_table[elem.id] = assign_node.value.elts[i]
+                    self._set_symbol(elem.id, assign_node.value.elts[i])
 
     def visit_Call(self, call_node):
+        logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
         if not call_node.func:
             logger.debug("Call node func does not exist")
             return
