@@ -1,10 +1,16 @@
-HTTP_VERBS = (
+MODULE_NAME = "requests"
+
+REQUESTS_API_HTTP_VERBS = (
     "get",
     "post",
     "option",
     "head",
     "put",
     "delete",
+    "patch"
+)
+
+REQUESTS_API_TOP_LEVEL = (
     "request"
 )
 

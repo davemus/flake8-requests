@@ -1,8 +1,8 @@
 import ast
-from urllib.parse import urlparse
-
 import logging
 import sys
+from urllib.parse import urlparse
+from collections import defaultdict
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -29,33 +29,26 @@ class DumbScopeVisitor(ast.NodeVisitor):
             val = self._symbol_lookup(val.id)
         return val
 
+    def _get_symbol_value(self, value):
+        if isinstance(value, ast.Str) or isinstance(value, ast.Bytes):
+            return value.s
+        elif isinstance(value, ast.Num):
+            return value.n
+        else: #TODO handle more cases
+            return None
+
+    def _get_possible_symbol_values(self, symbol):
+        return [self._get_symbol_value(sym) for sym in self.symbol_table[self.scope][symbol]]
+
+    def _symbol_could_be_value(self, symbol, value):
+        return any( [self._get_symbol_value(sym) == value for sym in self.symbol_table[self.scope][symbol]] )
+
     def _set_symbol(self, symbol, value):
-        self.symbol_table[self.scope][symbol] = value
+        self.symbol_table[self.scope][symbol].append(value)
 
     def _set_scope(self, scope):
         self.scope = scope
-        self.symbol_table[self.scope] = {}
-
-    def _parse_url(self, args):
-        for arg in args:
-            if isinstance(arg, ast.Str):
-                try:
-                    parsed = urlparse(arg.s)
-                    logger.debug(f"Parsed url is: {parsed}")
-                except Exception:
-                    parsed = None
-                    logger.debug("Not a parseable URL")
-                return parsed
-            elif isinstance(arg, ast.Name):
-                # Look up in symbol table
-                val = self._symbol_lookup(arg.id)
-                return self._parse_url([val])
-
-
-    def _is_http(self, parsed_url):
-        if parsed_url and parsed_url.scheme == "http":
-            return True
-        return False
+        self.symbol_table[self.scope] = defaultdict(list)
 
     def visit_FunctionDef(self, def_node):
         self._set_scope(def_node.name)

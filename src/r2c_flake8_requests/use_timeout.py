@@ -2,8 +2,8 @@ import ast
 import logging
 import sys
 
-from .dumb_scope_visitor import DumbScopeVisitor
-from .constants import HTTP_VERBS
+from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor
+from r2c_flake8_requests.constants import REQUESTS_API_HTTP_VERBS
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -35,7 +35,7 @@ class UseTimeout(object):
     def _message_for(self):
         return f"{self.code} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
 
-class UseTimeoutVisitor(DumbScopeVisitor):
+class UseTimeoutVisitor(RequestsBaseVisitor):
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
@@ -43,18 +43,10 @@ class UseTimeoutVisitor(DumbScopeVisitor):
             logger.debug("Call node func does not exist")
             return
 
-        if not isinstance(call_node.func, ast.Attribute):
-            logger.debug("Call node func is not an ast.Attribute")
-            return
-
-        attribute = call_node.func
-
-        if not attribute.value.id == "requests" and not attribute.attr in HTTP_VERBS:
+        fxn_name = self._get_function_name(call_node)
+        logger.debug(f"Found function name: {fxn_name}")
+        if not self.is_method(call_node, fxn_name):
             logger.debug("Call node is not a requests API call")
-            return
-
-        if not call_node.keywords:
-            logger.debug("No keywords on Call node")
             return
 
         keywords = call_node.keywords

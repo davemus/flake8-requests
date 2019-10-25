@@ -2,9 +2,10 @@ import ast
 import logging
 import sys
 from urllib.parse import urlparse
+from functools import reduce
 
-from .dumb_scope_visitor import DumbScopeVisitor
-from .constants import HTTP_VERBS, VALID_SCHEMES
+from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor
+from r2c_flake8_requests.constants import REQUESTS_API_HTTP_VERBS, VALID_SCHEMES
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -27,38 +28,52 @@ class UseScheme(object):
 
         for report in visitor.report_nodes:
             node = report['node']
-            url = report['url']
+            urls = report['urls']
             yield (
                 node.lineno,
                 node.col_offset,
-                self._message_for(url),
+                self._message_for(urls),
                 self.name,
             )
 
-    def _message_for(self, url):
-        return f"{self.code} need a scheme (e.g., https://) for url [{url}] otherwise requests will throw an exception.  See {self.reasoning}"
+    def _message_for(self, urls):
+        return f"{self.code} need a scheme (e.g., https://) for one of these possible urls {urls} otherwise requests will throw an exception.  See {self.reasoning}"
 
-class UseSchemeVisitor(DumbScopeVisitor):
+class UseSchemeVisitor(RequestsBaseVisitor):
 
-    def _parse_url(self, args):
-        for arg in args:
-            if isinstance(arg, ast.Str):
-                try:
-                    parsed = urlparse(arg.s)
-                    logger.debug(f"Parsed url is: {parsed}")
-                except Exception:
-                    parsed = None
-                    logger.debug("Not a parseable URL")
-                return parsed
-            elif isinstance(arg, ast.Name):
-                # Look up in symbol table
-                val = self._symbol_lookup(arg.id)
-                return self._parse_url([val])
+    def __init__(self):
+        super(UseSchemeVisitor, self).__init__()
+
+    def _try_parse_url(self, url):
+        try:
+            parsed = urlparse(url)
+            logger.debug(f"Parsed url is: {parsed}")
+        except Exception:
+            parsed = ""
+            logger.debug("Not a parseable URL")
+        return parsed
 
     def _is_valid_scheme(self, parsed_url):
         if parsed_url and parsed_url.scheme in VALID_SCHEMES:
             return True
         return False
+
+    def _see_if_possible_urls_fails_this_check(self, urls):
+        return any( [self._is_valid_scheme(url) for url in urls] )
+
+    def _get_possible_urls_from_arg(self, arg):
+        if isinstance(arg, ast.Name):
+            possible_values = self._get_possible_symbol_values(arg.id)
+            urls = [self._try_parse_url(value) for value in possible_values]
+        elif isinstance(arg, ast.Str):
+            urls = [self._try_parse_url(arg.s)]
+        urls = list(filter(lambda url: url, urls))
+        return urls
+
+    def _get_possible_urls_from_args(self, args):
+        urls = [self._get_possible_urls_from_arg(arg) for arg in args]
+        urls = list(reduce(lambda x, y: x + y, urls))
+        return urls
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
@@ -66,30 +81,25 @@ class UseSchemeVisitor(DumbScopeVisitor):
             logger.debug("Call node func does not exist")
             return
 
-        if not isinstance(call_node.func, ast.Attribute):
-            logger.debug("Call node func is not an ast.Attribute")
-            return
-
-        attribute = call_node.func
-
-        if not attribute.value.id == "requests" and not attribute.attr in HTTP_VERBS:
+        fxn_name = self._get_function_name(call_node)
+        if not self.is_method(call_node, fxn_name):
             logger.debug("Call node is not a requests API call")
             return
 
         args = call_node.args
-        url = self._parse_url(call_node.args)
-        if self._is_valid_scheme(url):
-            logger.debug("url has a valid scheme, so it's cool")
+        possible_urls = self._get_possible_urls_from_args(args)
+        if not possible_urls:
+            logger.debug("No possible urls; can't figure out what this is. Calling it good")
             return
 
-        # This is bad, I know.  Please forgive me.......
-        if url:
-            url = url.geturl()
+        if any( [self._is_valid_scheme(url) for url in possible_urls] ):
+            logger.debug("url has a valid scheme, so we're good")
+            return
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
         self.report_nodes.append({
             "node": call_node,
-            "url": url
+            "urls": [url.geturl() for url in possible_urls]
         })
 
 if __name__ == "__main__":

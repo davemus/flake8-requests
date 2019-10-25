@@ -2,24 +2,15 @@ import ast
 import logging
 import sys
 from urllib.parse import urlparse
+from functools import reduce
 
-from .dumb_scope_visitor import DumbScopeVisitor
+from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor 
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
-
-http_verbs = (
-    "get",
-    "post",
-    "option",
-    "head",
-    "put",
-    "delete",
-    "request"
-)
 
 class NoAuthOverHttp(object):
     name = "NoAuthOverHttp"
@@ -35,38 +26,29 @@ class NoAuthOverHttp(object):
 
         for report in visitor.report_nodes:
             node = report['node']
-            url = report['url']
+            urls = report['urls']
             yield (
                 node.lineno,
                 node.col_offset,
-                self._message_for(url),
+                self._message_for(urls),
                 self.name,
             )
 
-    def _message_for(self, url):
-        return f"{self.code} auth used over http: {url}"
+    def _message_for(self, urls):
+        return f"{self.code} auth is possibly used over http://, which could expose credentials. possible_urls: {urls}"
 
-class NoAuthOverHttpVisitor(DumbScopeVisitor):
+class NoAuthOverHttpVisitor(RequestsBaseVisitor):
 
-    def _parse_url(self, args):
-        for arg in args:
-            if isinstance(arg, ast.Str):
-                try:
-                    parsed = urlparse(arg.s)
-                    logger.debug(f"Parsed url is: {parsed}")
-                except Exception:
-                    parsed = None
-                    logger.debug("Not a parseable URL")
-                return parsed
-            elif isinstance(arg, ast.Name):
-                # Look up in symbol table
-                val = self._symbol_lookup(arg.id)
-                return self._parse_url([val])
+    def __init__(self):
+        super(NoAuthOverHttpVisitor, self).__init__()
 
     def _is_http(self, parsed_url):
         if parsed_url and parsed_url.scheme == "http":
             return True
         return False
+
+    def _see_if_possible_urls_fails_this_check(self, urls):
+        return any( [self._is_http(url) for url in urls] )
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
@@ -74,14 +56,9 @@ class NoAuthOverHttpVisitor(DumbScopeVisitor):
             logger.debug("Call node func does not exist")
             return
 
-        if not isinstance(call_node.func, ast.Attribute):
-            logger.debug("Call node func is not an ast.Attribute")
-            return
-
-        attribute = call_node.func
-
-        if not attribute.value.id == "requests" and not attribute.attr in http_verbs:
-            logger.debug("Call node is not a requests API call")
+        fxn_name = self._get_function_name(call_node)
+        if not self.is_method(call_node, fxn_name):
+            logger.debug(f"Call node is not a requests API call: {fxn_name}")
             return
 
         if not call_node.keywords:
@@ -97,16 +74,17 @@ class NoAuthOverHttpVisitor(DumbScopeVisitor):
             logger.debug("No args on Call node")
             return
 
-        args = call_node.args
-        url = self._parse_url(call_node.args)
-        if not self._is_http(url):
+
+        url_arg = self._get_url_arg(call_node, fxn_name)
+        possible_urls = self._get_possible_urls_from_arg(url_arg)
+        if not self._see_if_possible_urls_fails_this_check(possible_urls):
             logger.debug("url is not http, so it's fine")
             return
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
         self.report_nodes.append({
             "node": call_node,
-            "url": url.geturl()
+            "urls": [url.geturl() for url in possible_urls]
         })
 
 if __name__ == "__main__":

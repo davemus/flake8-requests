@@ -1,7 +1,8 @@
 import requests
+from requests import post
 
 def example_one():
-    requests.get('http://api.github.com/user', timeout=50)
+    requests.get('https://api.github.com/user', timeout=50)
 
 def example_two(url):
     from requests.auth import HTTPBasicAuth
@@ -9,4 +10,7 @@ def example_two(url):
 
 def example_three():
     to = 60
-    requests.get('http://api.github.com/user', timeout=to)
+    requests.get('https://api.github.com/user', timeout=to)
+
+def example_four(url):
+    post(url)
