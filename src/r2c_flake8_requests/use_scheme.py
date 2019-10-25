@@ -44,15 +44,6 @@ class UseSchemeVisitor(RequestsBaseVisitor):
     def __init__(self):
         super(UseSchemeVisitor, self).__init__()
 
-    def _try_parse_url(self, url):
-        try:
-            parsed = urlparse(url)
-            logger.debug(f"Parsed url is: {parsed}")
-        except Exception:
-            parsed = ""
-            logger.debug("Not a parseable URL")
-        return parsed
-
     def _is_valid_scheme(self, parsed_url):
         if parsed_url and parsed_url.scheme in VALID_SCHEMES:
             return True
