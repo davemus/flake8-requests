@@ -60,7 +60,7 @@ class NoAuthOverHttpVisitor(RequestsBaseVisitor):
             return
 
         if not call_node.keywords:
-            logger.debug("No keywords on Call node")
+            logger.debug("No keywords on Call node, don't care")
             return
 
         keywords = call_node.keywords
