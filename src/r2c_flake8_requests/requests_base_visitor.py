@@ -51,7 +51,6 @@ class RequestsBaseVisitor(DumbScopeVisitor, MethodVisitor):
             return func.id
 
     def _get_url_arg(self, call_node, function_name):
-        func = call_node.func
         if function_name in REQUESTS_API_HTTP_VERBS:
             # From requests/api.py L64:  def get(url, params=None, **kwargs):
             return call_node.args[0]

@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from functools import reduce
 
 from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor
-from r2c_flake8_requests.constants import REQUESTS_API_HTTP_VERBS, VALID_SCHEMES
+from r2c_flake8_requests.constants import VALID_SCHEMES
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)

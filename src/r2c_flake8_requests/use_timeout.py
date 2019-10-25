@@ -3,7 +3,6 @@ import logging
 import sys
 
 from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor
-from r2c_flake8_requests.constants import REQUESTS_API_HTTP_VERBS
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)

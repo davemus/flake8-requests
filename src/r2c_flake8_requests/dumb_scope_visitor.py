@@ -1,7 +1,6 @@
 import ast
 import logging
 import sys
-from urllib.parse import urlparse
 from collections import defaultdict
 
 logger = logging.getLogger(__file__)

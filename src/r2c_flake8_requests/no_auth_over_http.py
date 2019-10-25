@@ -1,8 +1,6 @@
 import ast
 import logging
 import sys
-from urllib.parse import urlparse
-from functools import reduce
 
 from r2c_flake8_requests.requests_base_visitor import RequestsBaseVisitor 
 
