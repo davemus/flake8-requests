@@ -35,7 +35,7 @@ class UseTimeout(object):
         return f"{self.code} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
 
 class UseTimeoutVisitor(RequestsBaseVisitor):
-
+ 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
         if not call_node.func:

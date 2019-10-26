@@ -2,6 +2,7 @@ import ast
 import logging
 import sys
 from collections import defaultdict
+from r2c_flake8_requests.import_aliasing import MethodVisitor
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
@@ -9,11 +10,12 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class DumbScopeVisitor(ast.NodeVisitor):
+class DumbScopeVisitor(MethodVisitor):
     def __init__(self):
         self.report_nodes = []
         self.symbol_table = {}
         self._set_scope("global")
+        super(DumbScopeVisitor, self).__init__()
 
     def _symbol_lookup(self, symbol):
         logger.debug(f"Symbol table: {self.symbol_table}")
@@ -48,8 +50,9 @@ class DumbScopeVisitor(ast.NodeVisitor):
     def _set_scope(self, scope):
         self.scope = scope
         self.symbol_table[self.scope] = defaultdict(list)
-
+ 
     def visit_FunctionDef(self, def_node):
+        logger.debug("Visiting FunctionDef node")
         self._set_scope(def_node.name)
         for node in def_node.body:
             self.visit(node)
@@ -63,8 +66,8 @@ class DumbScopeVisitor(ast.NodeVisitor):
             self.visit(node)
 
     def visit_Assign(self, assign_node):
-        target = assign_node.targets[0]
         logger.debug(f"Visiting Assign node: {ast.dump(assign_node)}")
+        target = assign_node.targets[0]
         if isinstance(target, ast.Name):
             if isinstance(target.ctx, ast.Store):
                 self._set_symbol(target.id, assign_node.value)
@@ -73,6 +76,7 @@ class DumbScopeVisitor(ast.NodeVisitor):
                 for i, elem in enumerate(target.elts):
                     self._set_symbol(elem.id, assign_node.value.elts[i])
 
+        self.visit(assign_node.value)
 
 if __name__ == "__main__":
     import argparse

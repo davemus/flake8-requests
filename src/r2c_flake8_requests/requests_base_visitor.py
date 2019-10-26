@@ -14,11 +14,10 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class RequestsBaseVisitor(DumbScopeVisitor, MethodVisitor):
+class RequestsBaseVisitor(DumbScopeVisitor):
 
     def __init__(self):
-        DumbScopeVisitor.__init__(self)
-        MethodVisitor.__init__(self)
+        super(RequestsBaseVisitor, self).__init__()
 
     def _try_parse_url(self, url):
         try:

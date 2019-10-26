@@ -11,6 +11,7 @@ class MethodVisitor(ast.NodeVisitor):
     def __init__(self):
         self.module_alias: str = MODULE_NAME
         self.aliases: Dict[str, str] = {}
+        super(MethodVisitor, self).__init__()
 
     def method_names(self) -> Set[str]:
         """Put all method names you're interested in here"""
