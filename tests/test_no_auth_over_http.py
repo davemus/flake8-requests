@@ -25,7 +25,7 @@ def test_basic_visit_call():
     bad_url = "http://github.com"
     code = f"""
 import requests
-requests.get('{bad_url}', auth=('user', 'pass'))
+r = requests.get('{bad_url}', auth=('user', 'pass'))
 """
 
     tree = ast.parse(code)
@@ -39,7 +39,7 @@ def test_no_auth_visit_call():
     bad_url = "http://github.com"
     code = f"""
 import requests
-requests.get('{bad_url}')
+r = requests.get('{bad_url}')
 """
 
     tree = ast.parse(code)
@@ -51,7 +51,7 @@ def test_import_function_visit_call():
     bad_url = "http://github.com"
     code = f"""
 from requests import get, post
-get('{bad_url}', auth=('user', 'pass'))
+r = get('{bad_url}', auth=('user', 'pass'))
 post('{bad_url}', auth=('user', 'pass'))
 """
 
