@@ -92,6 +92,7 @@ data = r.json()
     assert len(visitor.report_nodes[0]['urls']) == 1
     assert bad_url in visitor.report_nodes[0]['urls']
 
+# TODO: failure case
 def test_dot_format_case():
     code = """
 def check_image_evaluation(self, image, show_history=False, detail=False, tag=None, policy=None):
