@@ -10,6 +10,31 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
+class DontHandleRedirects(object):
+    name = "DontHandleRedirects"
+    version = "0.0.1"
+    code = "R2C704"
+    reasoning = "https://cve.mitre.org/cgi-bin/cvename.cgi?name=2018-18074"
+
+    def __init__(self, tree):
+        self.tree = tree
+
+    def run(self):
+        visitor = DontHandleRedirectsVisitor()
+        visitor.visit(self.tree)
+
+        for report in visitor.report_nodes:
+            node = report['node']
+            yield (
+                node.lineno,
+                node.col_offset,
+                self._message_for(),
+                self.name,
+            )
+
+    def _message_for(self):
+        return f"{self.code} let requests handle redirects for you to avoid inadvertently exposing sensitive data to other servers. See {self.reasoning}"
+
 class DontHandleRedirectsVisitor(RequestsBaseVisitor):
 
     def __init__(self):

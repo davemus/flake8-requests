@@ -44,8 +44,8 @@ class DumbScopeVisitor(MethodVisitor):
     def _symbol_could_be_value(self, symbol, value):
         return any( [self._get_symbol_value(sym) == value for sym in self.symbol_table[self.scope][symbol]] )
 
-    def _set_symbol(self, symbol, value):
-        self.symbol_table[self.scope][symbol].append(value)
+    def _set_symbol(self, symbol, value_node):
+        self.symbol_table[self.scope][symbol].append(value_node)
 
     def _set_scope(self, scope):
         self.scope = scope
@@ -74,7 +74,10 @@ class DumbScopeVisitor(MethodVisitor):
         elif isinstance(target, ast.Tuple):
             if isinstance(target.ctx, ast.Store):
                 for i, elem in enumerate(target.elts):
-                    self._set_symbol(elem.id, assign_node.value.elts[i])
+                    if not isinstance(elem, ast.Name):
+                        continue # TODO: need to figure out alternative cases
+                    if isinstance(assign_node.value, ast.Tuple):
+                        self._set_symbol(elem.id, assign_node.value.elts[i])
 
         self.visit(assign_node.value)
 

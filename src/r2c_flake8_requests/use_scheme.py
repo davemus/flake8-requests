@@ -52,20 +52,6 @@ class UseSchemeVisitor(RequestsBaseVisitor):
     def _see_if_possible_urls_fails_this_check(self, urls):
         return any( [self._is_valid_scheme(url) for url in urls] )
 
-    def _get_possible_urls_from_arg(self, arg):
-        if isinstance(arg, ast.Name):
-            possible_values = self._get_possible_symbol_values(arg.id)
-            urls = [self._try_parse_url(value) for value in possible_values]
-        elif isinstance(arg, ast.Str):
-            urls = [self._try_parse_url(arg.s)]
-        urls = list(filter(lambda url: url, urls))
-        return urls
-
-    def _get_possible_urls_from_args(self, args):
-        urls = [self._get_possible_urls_from_arg(arg) for arg in args]
-        urls = list(reduce(lambda x, y: x + y, urls))
-        return urls
-
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
         if not call_node.func:
@@ -77,8 +63,9 @@ class UseSchemeVisitor(RequestsBaseVisitor):
             logger.debug("Call node is not a requests API call")
             return
 
-        args = call_node.args
-        possible_urls = self._get_possible_urls_from_args(args)
+        url_arg = self._get_url_arg(call_node, fxn_name)
+        possible_urls = self._get_possible_urls_from_arg(url_arg)
+        logger.debug(f"possible_urls: {possible_urls}")
         if not possible_urls:
             logger.debug("No possible urls; can't figure out what this is. Calling it good")
             return

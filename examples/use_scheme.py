@@ -26,3 +26,10 @@ def example_four():
 
 def example_five():
     requests.get("HTTPS://api.github.com/users", params=params, timeout=60)
+
+class Example(object):
+    def example_six(self, message, chat_id):
+        url = self.base_url + "sendMessage?text={}&chat_id={}".format(message, chat_id)
+        response = requests.get(url)
+        content = response.content.decode("utf8")
+        return content
