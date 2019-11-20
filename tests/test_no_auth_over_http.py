@@ -2,7 +2,7 @@ import pytest
 import ast
 from urllib.parse import urlparse
 
-from r2c_flake8_requests.no_auth_over_http import NoAuthOverHttpVisitor
+from flake8_requests.no_auth_over_http import NoAuthOverHttpVisitor
 
 def test_is_http():
     true_urls = (

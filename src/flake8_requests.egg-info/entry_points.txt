@@ -1,0 +1,5 @@
+[flake8.extension]
+R2C701 = flake8_requests.no_auth_over_http:NoAuthOverHttp
+R2C702 = flake8_requests.use_timeout:UseTimeout
+R2C703 = flake8_requests.use_scheme:UseScheme
+

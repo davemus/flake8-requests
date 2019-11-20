@@ -2,7 +2,7 @@ import pytest
 import ast
 from urllib.parse import urlparse
 
-from r2c_flake8_requests.use_scheme import UseSchemeVisitor
+from flake8_requests.use_scheme import UseSchemeVisitor
 
 def test_is_valid_scheme():
     true_urls = (

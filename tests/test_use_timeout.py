@@ -2,7 +2,7 @@ import pytest
 import ast
 from urllib.parse import urlparse
 
-from r2c_flake8_requests.use_timeout import UseTimeoutVisitor 
+from flake8_requests.use_timeout import UseTimeoutVisitor
 
 def test_basic_visit_call():
     url = "https://github.com"
