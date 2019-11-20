@@ -6,7 +6,7 @@ from functools import reduce
 
 from flake8_requests.requests_base_visitor import RequestsBaseVisitor
 from flake8_requests.constants import VALID_SCHEMES
-
+from flake8_requests import __version__
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(stream=sys.stderr)
@@ -14,8 +14,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class UseScheme(object):
-    name = "UseScheme"
-    version = "0.0.1"
+    name = "r2c-use-scheme"
+    version = __version__
     code = "R2C703"
     reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
 

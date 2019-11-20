@@ -7,7 +7,6 @@ from functools import reduce
 from flake8_requests.dumb_scope_visitor import DumbScopeVisitor
 from flake8_requests.import_aliasing import MethodVisitor
 from flake8_requests.constants import REQUESTS_API_HTTP_VERBS, REQUESTS_API_TOP_LEVEL
-
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(stream=sys.stderr)

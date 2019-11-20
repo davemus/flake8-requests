@@ -3,50 +3,38 @@ import logging
 import sys
 
 from flake8_requests.requests_base_visitor import RequestsBaseVisitor
-
+from flake8_requests import __version__
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class NoAuthOverHttp(object):
-    name = "NoAuthOverHttp"
-    version = "0.0.1"
-    code = "R2C701"
+class UseTimeout(object):
+    name = "r2c-use-timeout"
+    version = __version__
+    code = "R2C702"
 
     def __init__(self, tree):
         self.tree = tree
 
     def run(self):
-        visitor = NoAuthOverHttpVisitor()
+        visitor = UseTimeoutVisitor()
         visitor.visit(self.tree)
 
         for report in visitor.report_nodes:
             node = report['node']
-            urls = report['urls']
             yield (
                 node.lineno,
                 node.col_offset,
-                self._message_for(urls),
+                self._message_for(),
                 self.name,
             )
 
-    def _message_for(self, urls):
-        return f"{self.code} auth is possibly used over http://, which could expose credentials. possible_urls: {urls}"
+    def _message_for(self):
+        return f"{self.code} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
 
-class NoAuthOverHttpVisitor(RequestsBaseVisitor):
-
-    def __init__(self):
-        super(NoAuthOverHttpVisitor, self).__init__()
-
-    def _is_http(self, parsed_url):
-        if parsed_url and parsed_url.scheme == "http":
-            return True
-        return False
-
-    def _see_if_possible_urls_fails_this_check(self, urls):
-        return any( [self._is_http(url) for url in urls] )
+class UseTimeoutVisitor(RequestsBaseVisitor):
 
     def visit_Call(self, call_node):
         logger.debug(f"Visiting Call node: {ast.dump(call_node)}")
@@ -55,34 +43,19 @@ class NoAuthOverHttpVisitor(RequestsBaseVisitor):
             return
 
         fxn_name = self._get_function_name(call_node)
+        logger.debug(f"Found function name: {fxn_name}")
         if not self.is_method(call_node, fxn_name):
-            logger.debug(f"Call node is not a requests API call: {fxn_name}")
-            return
-
-        if not call_node.keywords:
-            logger.debug("No keywords on Call node, don't care")
+            logger.debug("Call node is not a requests API call")
             return
 
         keywords = call_node.keywords
-        if not any([kw.arg == "auth" for kw in keywords]):
-            logger.debug("requests call does not contain the 'auth' keyword")
-            return
-
-        if not call_node.args:
-            logger.debug("No args on Call node")
-            return
-
-
-        url_arg = self._get_url_arg(call_node, fxn_name)
-        possible_urls = self._get_possible_urls_from_arg(url_arg)
-        if not self._see_if_possible_urls_fails_this_check(possible_urls):
-            logger.debug("url is not http, so it's fine")
+        if any([kw.arg == "timeout" for kw in keywords]):
+            logger.debug("requests call has the 'timeout' keyword, so we're good")
             return
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
         self.report_nodes.append({
             "node": call_node,
-            "urls": [url.geturl() for url in possible_urls]
         })
 
 if __name__ == "__main__":
@@ -100,5 +73,5 @@ if __name__ == "__main__":
     with open(args.inputfile, 'r') as fin:
         tree = ast.parse(fin.read())
 
-    visitor = NoAuthOverHttpVisitor()
+    visitor = UseTimeoutVisitor()
     visitor.visit(tree)
