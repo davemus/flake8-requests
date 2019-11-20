@@ -11,9 +11,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class UseTimeout(object):
-    name = "r2c-use-timeout"
+    name = "r2c-requests-use-timeout"
     version = __version__
-    code = "R2C702"
 
     def __init__(self, tree):
         self.tree = tree
@@ -32,7 +31,7 @@ class UseTimeout(object):
             )
 
     def _message_for(self):
-        return f"{self.code} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
+        return f"{self.name} use a timeout; requests will hang forever without a timeout (recommended 60 sec)"
 
 class UseTimeoutVisitor(RequestsBaseVisitor):
 

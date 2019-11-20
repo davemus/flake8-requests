@@ -12,9 +12,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class NoAuthOverHttp(object):
-    name = "r2c-no-auth-over-http"
+    name = "r2c-requests-no-auth-over-http"
     version = __version__
-    code = "R2C701"
 
     def __init__(self, tree):
         self.tree = tree
@@ -34,7 +33,7 @@ class NoAuthOverHttp(object):
             )
 
     def _message_for(self, urls):
-        return f"{self.code} auth is possibly used over http://, which could expose credentials. possible_urls: {urls}"
+        return f"{self.name} auth is possibly used over http://, which could expose credentials. possible_urls: {urls}"
 
 class NoAuthOverHttpVisitor(RequestsBaseVisitor):
 

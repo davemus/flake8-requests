@@ -14,9 +14,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class UseScheme(object):
-    name = "r2c-use-scheme"
+    name = "r2c-requests-use-scheme"
     version = __version__
-    code = "R2C703"
     reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
 
     def __init__(self, tree):
@@ -37,7 +36,7 @@ class UseScheme(object):
             )
 
     def _message_for(self, urls):
-        return f"{self.code} need a scheme (e.g., https://) for one of these possible urls {urls} otherwise requests will throw an exception.  See {self.reasoning}"
+        return f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls} otherwise requests will throw an exception.  See {self.reasoning}"
 
 class UseSchemeVisitor(RequestsBaseVisitor):
 
