@@ -1,18 +1,11 @@
-venv:
-	python3 -m venv .venv
-	@echo 'run `source .venv/bin/activate` to use virtualenv'
+dev:
+	poetry shell
 
 setup:
-	python3 -m pip install -Ur requirements.txt
-
-dev: venv
-	source .venv/bin/activate && make setup
-	source .venv/bin/activate && python3 setup.py develop
-	@echo 'run `source .venv/bin/activate` to develop flake8_requests'
+	poetry install
 
 release:
-	python3 setup.py bdist_wheel
-	python3 -m twine upload dist/*
+	poetry publish --build
 
 test:
 	export PYTHONPATH=`pwd`/src
