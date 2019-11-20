@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flake8-requests"
-version = "0.1.0"
+version = "0.1.1"
 description = "r2c checks for requests"
 authors = ["R2C <hello@returntocorp.com>"]
 readme = "README.md"
