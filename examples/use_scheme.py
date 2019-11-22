@@ -33,3 +33,19 @@ class Example(object):
         response = requests.get(url)
         content = response.content.decode("utf8")
         return content
+
+
+import requests
+requests.get("http://github.com")
+requests.get("http://localhost:8000")
+requests.get("http://www.github.com/user?name=foo&repo=bar")
+requests.get("https://github.com")
+requests.get("https://www.github.com/user?name=foo&repo=bar")
+requests.get("ftp://192.168.1.101")
+requests.get("ws://192.168.1.101")
+requests.get("file:///Users/user/secrets.txt")
+
+
+r = requests.request("GET", "github.com")
+r = requests.request("POST", "notavalidscheme://www.github.com/user?name=foo&repo=bar")
+
