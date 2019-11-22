@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from flake8_requests.use_scheme import UseSchemeVisitor
 
+# Helper methods
 def test_is_valid_scheme():
     true_urls = (
         "http://github.com",
@@ -25,6 +26,8 @@ def test_is_valid_scheme():
     assert all([visitor._is_valid_scheme(urlparse(url)) for url in true_urls])
     assert all([not visitor._is_valid_scheme(urlparse(url)) for url in false_urls])
 
+## True positives
+@pytest.mark.true_positive
 def test_basic_visit_call():
     bad_url = "github.com"
     code = f"""
@@ -39,44 +42,7 @@ requests.get('{bad_url}', auth=('user', 'pass'))
     assert len(visitor.report_nodes[0]['urls']) == 1
     assert bad_url in visitor.report_nodes[0]['urls']
 
-def test_valid_scheme_visit_call():
-    bad_url = "http://github.com"
-    code = f"""
-import requests
-requests.get('{bad_url}')
-"""
-
-    tree = ast.parse(code)
-    visitor = UseSchemeVisitor()
-    visitor.visit(tree)
-    assert len(visitor.report_nodes) == 0
-
-def test_unresolvable_variable():
-    code = """
-def send_message(self, message, chat_id):
-    url = self.base_url + "sendMessage?text={}&chat_id={}".format(message, chat_id)
-    response = requests.get(url)
-    content = response.content.decode("utf8")
-    return content
-"""
-
-    tree = ast.parse(code)
-    visitor = UseSchemeVisitor()
-    visitor.visit(tree)
-    assert len(visitor.report_nodes) == 0
-
-def test_none_case():
-    code = """
-url = None
-response = requests.get(url, timeout=20)
-content = response.content.decode("utf8")
-"""
-
-    tree = ast.parse(code)
-    visitor = UseSchemeVisitor()
-    visitor.visit(tree)
-    assert len(visitor.report_nodes) == 0
-
+@pytest.mark.true_positive
 def test_request_case():
     bad_url = "api.github.com/user"
     code = f"""
@@ -92,7 +58,51 @@ data = r.json()
     assert len(visitor.report_nodes[0]['urls']) == 1
     assert bad_url in visitor.report_nodes[0]['urls']
 
+## True negatives
+@pytest.mark.true_negative
+def test_valid_scheme_visit_call():
+    bad_url = "http://github.com"
+    code = f"""
+import requests
+requests.get('{bad_url}')
+"""
+
+    tree = ast.parse(code)
+    visitor = UseSchemeVisitor()
+    visitor.visit(tree)
+    assert len(visitor.report_nodes) == 0
+
+@pytest.mark.true_negative
+def test_unresolvable_variable():
+    code = """
+def send_message(self, message, chat_id):
+    url = self.base_url + "sendMessage?text={}&chat_id={}".format(message, chat_id)
+    response = requests.get(url)
+    content = response.content.decode("utf8")
+    return content
+"""
+
+    tree = ast.parse(code)
+    visitor = UseSchemeVisitor()
+    visitor.visit(tree)
+    assert len(visitor.report_nodes) == 0
+
+@pytest.mark.true_negative
+def test_none_case():
+    code = """
+url = None
+response = requests.get(url, timeout=20)
+content = response.content.decode("utf8")
+"""
+
+    tree = ast.parse(code)
+    visitor = UseSchemeVisitor()
+    visitor.visit(tree)
+    assert len(visitor.report_nodes) == 0
+
+## False negatives
 # TODO: failure case
+@pytest.mark.false_negative
 def test_dot_format_case():
     code = """
 def check_image_evaluation(self, image, show_history=False, detail=False, tag=None, policy=None):
