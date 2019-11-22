@@ -17,6 +17,5 @@ Validate the install using `--version`. flake8-requests adds two plugins, but th
 ```
 
 ## List of warnings
-- R2C701="flake8_requests.no_auth_over_http:NoAuthOverHttp"
-- R2C702="flake8_requests.use_timeout:UseTimeout"
-- R2C703="flake8_requests.use_scheme:UseScheme"
+- `r2c-requests-no-auth-over-http`: Alerts when `auth` param is possibly used over http://, which could expose credentials
+- `r2c-requests-use-scheme`: Alerts when URLs passed to  `requests` API methods dont have a URL scheme (e.g., https://), otherwise an exception will be thrown. See https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters
