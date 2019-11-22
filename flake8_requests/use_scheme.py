@@ -55,5 +55,5 @@ class UseSchemeVisitor(RequestsBaseVisitor):
         self.report_nodes.append({
             "node": call_node,
             "urls": urls,
-            "message": f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls} otherwise requests will throw an exception.  See {self.reasoning}"
+            "message": f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls}. Otherwise requests will throw an exception.  See {self.reasoning}"
         })
