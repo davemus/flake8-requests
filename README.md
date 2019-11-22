@@ -17,5 +17,6 @@ Validate the install using `--version`. flake8-requests adds two plugins, but th
 ```
 
 ## List of warnings
-- `r2c-requests-no-auth-over-http`: Alerts when `auth` param is possibly used over http://, which could expose credentials
-- `r2c-requests-use-scheme`: Alerts when URLs passed to  `requests` API methods dont have a URL scheme (e.g., https://), otherwise an exception will be thrown. See https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters
+- `r2c-requests-no-auth-over-http`: Alerts when `auth` param is possibly used over http://, which could expose credentials. See more documentation at https://checks.bento.dev/en/latest/flake8-requests/r2c-requests-no-auth-over-http/
+- `r2c-requests-use-scheme`: Alerts when URLs passed to  `requests` API methods dont have a URL scheme (e.g., https://), otherwise an exception will be thrown. See more documentation at
+https://checks.bento.dev/en/latest/flake8-requests/r2c-requests-use-scheme/
