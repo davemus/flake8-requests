@@ -13,32 +13,9 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class UseScheme(object):
-    name = "r2c-requests-use-scheme"
-    version = __version__
-    reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
-
-    def __init__(self, tree):
-        self.tree = tree
-
-    def run(self):
-        visitor = UseSchemeVisitor()
-        visitor.visit(self.tree)
-
-        for report in visitor.report_nodes:
-            node = report['node']
-            urls = report['urls']
-            yield (
-                node.lineno,
-                node.col_offset,
-                self._message_for(urls),
-                self.name,
-            )
-
-    def _message_for(self, urls):
-        return f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls} otherwise requests will throw an exception.  See {self.reasoning}"
-
 class UseSchemeVisitor(RequestsBaseVisitor):
+    name = "r2c-requests-use-scheme"
+    reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
 
     def __init__(self):
         super(UseSchemeVisitor, self).__init__()
@@ -74,25 +51,9 @@ class UseSchemeVisitor(RequestsBaseVisitor):
             return
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
+        urls = [url.geturl() for url in possible_urls]
         self.report_nodes.append({
             "node": call_node,
-            "urls": [url.geturl() for url in possible_urls]
+            "urls": urls,
+            "message": f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls}. Otherwise requests will throw an exception.  See {self.reasoning}"
         })
-
-if __name__ == "__main__":
-    import argparse
-
-    logger.setLevel(logging.DEBUG)
-
-    parser = argparse.ArgumentParser()
-    # Add arguments here
-    parser.add_argument("inputfile")
-
-    args = parser.parse_args()
-
-    logger.info(f"Parsing {args.inputfile}")
-    with open(args.inputfile, 'r') as fin:
-        tree = ast.parse(fin.read())
-
-    visitor = UseSchemeVisitor()
-    visitor.visit(tree)

@@ -11,31 +11,8 @@ handler = logging.StreamHandler(stream=sys.stderr)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
-class NoAuthOverHttp(object):
-    name = "r2c-requests-no-auth-over-http"
-    version = __version__
-
-    def __init__(self, tree):
-        self.tree = tree
-
-    def run(self):
-        visitor = NoAuthOverHttpVisitor()
-        visitor.visit(self.tree)
-
-        for report in visitor.report_nodes:
-            node = report['node']
-            urls = report['urls']
-            yield (
-                node.lineno,
-                node.col_offset,
-                self._message_for(urls),
-                self.name,
-            )
-
-    def _message_for(self, urls):
-        return f"{self.name} auth is possibly used over http://, which could expose credentials. possible_urls: {urls}"
-
 class NoAuthOverHttpVisitor(RequestsBaseVisitor):
+    name = "r2c-requests-no-auth-over-http"
 
     def __init__(self):
         super(NoAuthOverHttpVisitor, self).__init__()
@@ -80,25 +57,9 @@ class NoAuthOverHttpVisitor(RequestsBaseVisitor):
             return
 
         logger.debug(f"Found this node: {ast.dump(call_node)}")
+        urls = [url.geturl() for url in possible_urls]
         self.report_nodes.append({
             "node": call_node,
-            "urls": [url.geturl() for url in possible_urls]
+            "urls": urls,
+            "message": f"{self.name} auth is possibly used over http://, which could expose credentials. Switch to https://. Possible urls: f{urls}"
         })
-
-if __name__ == "__main__":
-    import argparse
-
-    logger.setLevel(logging.DEBUG)
-
-    parser = argparse.ArgumentParser()
-    # Add arguments here
-    parser.add_argument("inputfile")
-
-    args = parser.parse_args()
-
-    logger.info(f"Parsing {args.inputfile}")
-    with open(args.inputfile, 'r') as fin:
-        tree = ast.parse(fin.read())
-
-    visitor = NoAuthOverHttpVisitor()
-    visitor.visit(tree)
