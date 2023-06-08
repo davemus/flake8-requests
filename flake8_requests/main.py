@@ -27,7 +27,7 @@ class Flake8Requests:
         visitors = [
             NoAuthOverHttpVisitor(),
             UseSchemeVisitor(),
-            # UseTimeoutVisitor(),
+            UseTimeoutVisitor(),
         ]
         for visitor in visitors:
             visitor.visit(self.tree)

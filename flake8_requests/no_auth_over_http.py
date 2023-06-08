@@ -12,6 +12,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class NoAuthOverHttpVisitor(RequestsBaseVisitor):
+    code = "FRX001"
     name = "r2c-requests-no-auth-over-http"
 
     def __init__(self):
@@ -61,5 +62,5 @@ class NoAuthOverHttpVisitor(RequestsBaseVisitor):
         self.report_nodes.append({
             "node": call_node,
             "urls": urls,
-            "message": f"{self.name} auth is possibly used over http://, which could expose credentials. Switch to https://. Possible urls: f{urls}"
+            "message": f"{self.code} {self.name} auth is possibly used over http://, which could expose credentials. Switch to https://. Possible urls: f{urls}"
         })

@@ -14,6 +14,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class UseSchemeVisitor(RequestsBaseVisitor):
+    code = "FRX002"
     name = "r2c-requests-use-scheme"
     reasoning = "https://stackoverflow.com/questions/15115328/python-requests-no-connection-adapters"
 
@@ -55,5 +56,5 @@ class UseSchemeVisitor(RequestsBaseVisitor):
         self.report_nodes.append({
             "node": call_node,
             "urls": urls,
-            "message": f"{self.name} need a scheme (e.g., https://) for one of these possible urls {urls}. Otherwise requests will throw an exception.  See {self.reasoning}"
+            "message": f"{self.code} {self.name} need a scheme (e.g., https://) for one of these possible urls {urls}. Otherwise requests will throw an exception.  See {self.reasoning}"
         })

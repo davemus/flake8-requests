@@ -11,6 +11,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 class UseTimeoutVisitor(RequestsBaseVisitor):
+    code = "FRX003"
     name = "r2c-requests-use-timeout"
 
     def visit_Call(self, call_node):
@@ -33,5 +34,5 @@ class UseTimeoutVisitor(RequestsBaseVisitor):
         logger.debug(f"Found this node: {ast.dump(call_node)}")
         self.report_nodes.append({
             "node": call_node,
-            "message": f"{self.name} requests will hang forever without a timeout. Consider adding a timeout (recommended 10 sec)."
+            "message": f"{self.code} {self.name} requests will hang forever without a timeout. Consider adding a timeout (recommended 10 sec)."
         })
